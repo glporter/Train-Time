@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <!-- Link to Moment.js should go here -->
+    <script src="https://cdn.jsdelivr.net/momentjs/2.12.0/moment.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="assets/css/style.css">
+    <script src="https://www.gstatic.com/firebasejs/live/3.0/firebase.js"></script>
+
+</head>
+
+<body>
+    <!-- Jumbotron -->
+    <div class="container">
+        <div class="jumbotron">
+            <h1 class="text-center">Anytime is Train Time</h1>
+            <h3 class="text-center">Chee Chee. Choo Choo</h3>
+        </div>
+
+        <div class="container">
+
+            <br>
+
+
+
+            <!-- Current Train Schedule -->
+            <div class="col-lg-6">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Current Train Schedule</h3>
+                    </div>
+                    <!-- <div class="panel-body" id="recent-schedule-added"> -->
+                    <div class="panel-body">
+                        <table class="table table-bordered" id="train-table" cellspacing="150">
+                            <thead>
+                                <tr>
+                                    <th>Train Name</th>
+                                    <th>Destination</th>
+                                    <th>Frequency</th>
+                                    <th>Next Arrival</th>
+                                    <th>Minutes Away</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!--          <tr>
+                                    <td>Trenton Express</td>
+                                    <td>Trenton</td>
+                                    <td>25</td>
+                                    <td>05:35</td>
+                                    <td>10</td>  
+                                </tr>  -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="col-lg-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Add Train</h3>
+                </div>
+                <div class="panel-body">
+
+                    <!-- Sign-up Form (note the various input "types")-->
+                    <form role="form">
+                        <div class="form-group">
+                            <label for="train-input">Train Name</label>
+                            <input class="form-control" id="train-name-input" type="text">
+                        </div>
+                        <div class="form-group">
+                            <label for="destination-input">Destination</label>
+                            <input class="form-control" id="dest-input" type="text">
+                        </div>
+                        <div class="form-group">
+                            <label for="start-input">First Train Time (HH:MM - miliary Time)</label>
+                            <input class="form-control" id="start-time-input" type="text">
+                        </div>
+                        <div class="form-group">
+                            <label for="frequency-input">Frequency (min)</label>
+                            <input class="form-control" id="frequency-input" type="text">
+                        </div>
+                        <button class="btn btn-default" id="add-train" type="submit">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+    </div>
+    </div>
+    <script>
+        // START CODING BELOW!!
+        // Initialize Firebase
+        var config = {
+            apiKey: "AIzaSyDvAcROieS9HlHCm0J0V-HKpJAS4Gndpvc",
+            authDomain: "train-project-b1314.firebaseapp.com",
+            databaseURL: "https://train-project-b1314.firebaseio.com",
+            projectId: "train-project-b1314",
+            storageBucket: "train-project-b1314.appspot.com",
+            messagingSenderId: "110537890157"
+        };
+
+        firebase.initializeApp(config);
+
+        // Create a variable to reference the database
+        var database = firebase.database();
+
+        var train = "";
+        var destination = "";
+        var starttime = "";
+        var frequency = "";
+        var tempStartTime = "";
+        var nextArrival = "";
+        var minutesAway = "";
+
+
+        // Capture Button Click
+        $("#add-train").on("click", function() {
+            // Don't refresh the page!
+            event.preventDefault();
+
+            // Initial Values
+
+
+            train = $("#train-name-input").val();
+            destination = $("#dest-input").val();
+            tempStartTime = $("#start-time-input").val();
+            frequency = $("#frequency-input").val();
+
+            console.log("Train:       " + train);
+            console.log("Destination: " + destination);
+            console.log("Start time:  " + tempStartTime);
+            console.log("Frequency:   " + frequency);
+
+
+            database.ref().push({
+                train: train,
+                destination: destination,
+                starttime: tempStartTime,
+                frequency: frequency
+            });
+
+            console.log("Frequency: " + frequency);
+            performTimeComputations(starttime, frequency);
+            addTrainInfo();
+
+        });
+
+
+
+        function addTrainInfo() {
+            //nextArrival = "10:55";
+            //minutesAway = "20"
+            var trainRow = $("<tr><td>" + train + "</td>" + "<td>" + destination + "</td>" + "<td>" + frequency + "</td>" + "<td>" + nextArrival + "</td>" + "<td>" + minutesAway + "</td></tr>");
+            $("#train-table").append(trainRow);
+        }
+
+
+
+
+
+        function performTimeComputations(starttime, frequency) {
+            // ==========================================================
+
+            // Solved Mathematically
+            // Test case 1:
+            // 16 - 00 = 16
+            // 16 % 3 = 1 (Modulus is the remainder)
+            // 3 - 1 = 2 minutes away
+            // 2 + 3:16 = 3:18
+
+            // Solved Mathematically
+            // Test case 2:
+            // 16 - 00 = 16
+            // 16 % 7 = 2 (Modulus is the remainder)
+            // 7 - 2 = 5 minutes away
+            // 5 + 3:16 = 3:21
+
+            // Assumptions
+            var tFrequency = frequency;
+            console.log(tFrequency);
+
+            // Time is 3:30 AM
+            var firstTime = starttime;
+
+            // First Time (pushed back 1 year to make sure it comes before current time)
+            var firstTimeConverted = moment(firstTime, "hh:mm").subtract(1, "years");
+            console.log(firstTimeConverted);
+
+            // Current Time
+            var currentTime = moment();
+            console.log("CURRENT TIME: " + moment(currentTime).format("hh:mm"));
+
+            // Difference between the times
+            var diffTime = moment().diff(moment(firstTimeConverted), "minutes");
+            console.log("DIFFERENCE IN TIME: " + diffTime);
+
+            // Time apart (remainder)
+            var tRemainder = diffTime % tFrequency;
+            console.log("tRemainder: " + tRemainder);
+
+            // Minute Until Train
+            var tMinutesTillTrain = tFrequency - tRemainder;
+            console.log("MINUTES TILL TRAIN: " + tMinutesTillTrain);
+            minutesAway = tMinutesTillTrain;
+
+            // Next Train
+            var nextTrain = moment().add(tMinutesTillTrain, "minutes");
+            console.log("ARRIVAL TIME: " + moment(nextTrain).format("hh:mm"));
+            nextArrival = moment(nextTrain).format("hh:mm");
+
+        }
+    </script>
+
+
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
+</body>
+
+</html>
